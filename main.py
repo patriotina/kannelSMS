@@ -19,8 +19,8 @@ def smstest(fromnumberlist, tonumberlist):
             for i in range(10**nwidth):
                 gennum = str(i).zfill(nwidth)
                 bignum = str(tonumber)+gennum
-                print(gennum + ' - ' + bignum)
-                #sendsms(fromnumber, bignum)
+                #print(gennum + ' - ' + bignum)
+                sendsms(fromnumber, bignum)
         else:
             sendsms(fromnumber, tonumber)
 
@@ -38,6 +38,7 @@ def openlog(filename, dt, frn, ton):
     f = open(filename)
     ppp = []
     for line in f:
+
         #print(line)
         part1 = line[0:line.find('[')]
         date1 = part1[:19]

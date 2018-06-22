@@ -1,5 +1,6 @@
 import datetime
 import csv
+import options
 
 '''
 Input: Begin Date, End Date, Send/Receive, To-Number, From-Number
@@ -59,6 +60,9 @@ def analytic(pList, statusSms, typeNum, telNum, direction):
                 if item[0] < eDate: eDate = item[0]
                 if item[0] > lDate: lDate = item[0]
                 tCount = tCount + 1
+    if tCount == 0:
+        eDate = 'none'
+        lDate = 'none'
     writefile(statusSms, telNum, tCount, eDate, lDate, direction)
 
 
@@ -70,7 +74,9 @@ def writefile(statusSms, telNum, tCount, eDate, lDate, direction):
 
 
 
-startDate = datetime.datetime.strptime('2018-06-16 06:39:44', '%Y-%m-%d %H:%M:%S')
-finDate = datetime.datetime.strptime('2018-06-18 09:03:42', '%Y-%m-%d %H:%M:%S')
-openfile('access.log', startDate, finDate, '7192126175', '5154455218')
-# [from:+17192126174] [to:+16419422466]
+startDate = datetime.datetime.strptime(options.startDate, '%Y-%m-%d %H:%M:%S')
+finDate = datetime.datetime.strptime(options.endDeate, '%Y-%m-%d %H:%M:%S')
+if startDate < finDate:
+    openfile(options.filename, startDate, finDate, options.fromNumber, options.toNumber)
+else:
+    print('Error in input data. Start date is older then final date')
