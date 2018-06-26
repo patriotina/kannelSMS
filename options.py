@@ -1,5 +1,7 @@
 filename = 'access.log'
-startDate = '2018-06-16 06:39:44'
+startDate = '2018-06-17 15:33:52'
 endDeate = '2018-06-18 09:03:42'
-fromNumber = '7192126175'
-toNumber = '5154455218'
+fromNumber = '6144177400'
+toNumber = '6416522019'
+fromNumberList = ['6144177400']
+toNumberList = ['6416522019','6416522039']

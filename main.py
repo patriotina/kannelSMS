@@ -1,105 +1,101 @@
 import random
 import requests
 import datetime
-import re
+import time
+import options
+import uuid
+import csv
 
 # url to sms gate: http://198.245.50.106:13006/cgi-bin/sendsms?username=tester&password=t3st3r&from=%2B14422209344&to=%2B14844249683&text=test&smsc=Tyntec
 # log: 2018-06-19 00:43:31 Receive SMS [SMSC:Tyntec] [SVC:] [ACT:ipc] [BINF:] [FID:] [META:?smpp?] [from:+17192126172] [to:+16573423795] [flags:-1:0:-1:0:-1] [msg:132:WeChat verification code (7745) may only be used once to verify mobile number. For account safety, don't forward the code to others.] [udh:0:]
 
+delaysec = 10
+
 def smstest(fromnumberlist, tonumberlist):
+    starttime = datetime.datetime.now()
     if len(fromnumberlist) > 0:
         fromnumber = random.choice(fromnumberlist)
     else:
         print("list of from_number is incorrect")
-
     for tonumber in tonumberlist:
         if len(tonumber) < 10:
             nwidth = 10 - len(str(tonumber))
-
             for i in range(10**nwidth):
                 gennum = str(i).zfill(nwidth)
                 bignum = str(tonumber)+gennum
-                #print(gennum + ' - ' + bignum)
                 sendsms(fromnumber, bignum)
+                openlog(options.filename, starttime, fromnumber, bignum)
         else:
             sendsms(fromnumber, tonumber)
+            openlog(options.filename, starttime, fromnumber, tonumber)
 
 def sendsms(fromn, ton):
-
     url = "http://198.245.50.106:13006/cgi-bin/sendsms?username=tester&password=t3st3r&from=%2B1{fromnum}&to=%2B1{tonum}&text=test&smsc=Tyntec".format(fromnum=fromn, tonum = ton)
     print(url)
     response = requests.get(url)
-    print(response)
-    print(response.content)
-
-
+    #print(response)
+    #print(response.content)
 
 def openlog(filename, dt, frn, ton):
+    time.sleep(delaysec)
     f = open(filename)
     ppp = []
     for line in f:
-
-        #print(line)
+        #devide log-line to 2 parts. part1 - data time and status, all info going to first [ symbol
         part1 = line[0:line.find('[')]
+        #get data and time from part1
         date1 = part1[:19]
+        #get status (after time to end of string and clear from spaces at begin and end of string
         stat = part1[19:].strip()
-        print(stat)
+        #convert date-time from string to datetime format
         mydate = datetime.datetime.strptime(date1, '%Y-%m-%d %H:%M:%S')
-
-        if mydate == dt:
-
-            print(part1)
+        dtdelta = dt + datetime.timedelta(seconds=delaysec)
+        if mydate >= dt and mydate <= dtdelta:
+            #get part2 string from log-line, all going after first [ symbol
             part2 = line[line.find('['):]
-            print(part2)
-
+            #convert part2 to list using biricks as separator
             part3 = part2.split('[')
-            part3.pop(0)
-            pp = [stat]
-            print(part3)
+            part3.pop(0)    #clear first list item, its just a space
+            pp = [date1]
+            pp.append(stat)     #write a new list, starts with status
             for p in part3:
                 pp.append(p[:p.find(']')])
-            print(pp)
             ppp.append(pp)
-
     f.close()
     testlog(ppp, frn, ton)
 
 def testlog(logs, frn, ton):
-
-    #print(logstr[7])
-    #print(logstr[7][-10:] + ' - ' + frn)
-
-    #print(logstr[8])
-    #print(logstr[8][-10:] + ' - ' + ton)
-
     r = False
     s = False
     out = []
-    vsp = ''
     for logstr in logs:
-        if frn == logstr[7][-10:]:
-            print(logstr[0])
-            if logstr[0] == 'Receive SMS':
+        if (frn == logstr[8][-10:]) and (ton == logstr[9][-10:]):
+            if logstr[1] == 'Receive SMS':
                 r = True
                 out.append(logstr)
-                vsp = frn
-                frn = ton
-                ton = vsp
-            if logstr[0] == 'Sent SMS' and r:
+            if logstr[1] == 'Sent SMS' and r :
                 s = True
                 out.append(logstr)
-
     print(out)
+    if r and s:
+        filename = str(uuid.uuid4()) + '_case1.csv'
+    elif r and not s:
+        filename = str(uuid.uuid4()) + '_case2.csv'
+    elif not r:
+        filename = str(uuid.uuid4()) + '_case3.csv'
+    else:
+        exit()
+    with open(filename, 'wb') as f:
+        fwriter = csv.writer(f)
+        for item in out:
+            fwriter.writerow(item)
 
 def smstest2(fromnumberlist, tonumberbase):
     if len(fromnumberlist) > 0:
         fromnumber = random.choice(fromnumberlist)
     else:
         print("list of from_number is incorrect")
-
-
     nwidth = 10 - len(str(tonumberbase))
-
     for i in range(10**nwidth):
         gennum = str(i).zfill(nwidth)
         bignum = str(tonumberbase)+gennum
@@ -108,4 +104,9 @@ def smstest2(fromnumberlist, tonumberbase):
 
 #smstest([4422209344], [4844249683])
 #smstest2([4422209344], 48442496)
-openlog('access.log', datetime.datetime.strptime('2018-04-05 16:08:48', '%Y-%m-%d %H:%M:%S'), '6824102022', '4242150000')
+#2018-06-17 15:33:52 Receive SMS [SMSC:Tyntec] [SVC:] [ACT:ipc] [BINF:] [FID:] [META:?smpp?] [from:+16144177400] [to:+16416522019] [flags:-1:0:-1:0:-1] [msg:132:WeChat verification code (1073) may only be used once to verify mobile number. For account safety, don't forward the code to others.] [udh:0:]
+
+#openlog('access.log', datetime.datetime.strptime('2018-06-17 15:33:52', '%Y-%m-%d %H:%M:%S'), '6144177400', '6416522019')
+#openlog(options.filename, datetime.datetime.strptime(options.startDate, '%Y-%m-%d %H:%M:%S'), options.fromNumber, options.toNumber)
+
+smstest(options.fromNumberList, options.toNumberList)
