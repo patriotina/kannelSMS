@@ -9,8 +9,10 @@ import csv
 # url to sms gate: http://198.245.50.106:13006/cgi-bin/sendsms?username=tester&password=t3st3r&from=%2B14422209344&to=%2B14844249683&text=test&smsc=Tyntec
 # log: 2018-06-19 00:43:31 Receive SMS [SMSC:Tyntec] [SVC:] [ACT:ipc] [BINF:] [FID:] [META:?smpp?] [from:+17192126172] [to:+16573423795] [flags:-1:0:-1:0:-1] [msg:132:WeChat verification code (7745) may only be used once to verify mobile number. For account safety, don't forward the code to others.] [udh:0:]
 
+# dealy to get pause between sending process and reading logfile. Process of sending can take some time on Kannel, so give few seconds to it.
 delaysec = 10
 
+#function of checking input lists. Check length of number, choose random number for FROM field and check length number and generate numbers for TO field
 def smstest(fromnumberlist, tonumberlist):
     starttime = datetime.datetime.now()
     if len(fromnumberlist) > 0:
@@ -29,6 +31,7 @@ def smstest(fromnumberlist, tonumberlist):
             sendsms(fromnumber, tonumber)
             openlog(options.filename, starttime, fromnumber, tonumber)
 
+#function to request sending URL to send SMS
 def sendsms(fromn, ton):
     url = "http://198.245.50.106:13006/cgi-bin/sendsms?username=tester&password=t3st3r&from=%2B1{fromnum}&to=%2B1{tonum}&text=test&smsc=Tyntec".format(fromnum=fromn, tonum = ton)
     print(url)
@@ -36,6 +39,7 @@ def sendsms(fromn, ton):
     #print(response)
     #print(response.content)
 
+#function to open log file, parse it and check does it has a data about sended or received SMS in needed time duration
 def openlog(filename, dt, frn, ton):
     time.sleep(delaysec)
     f = open(filename)
@@ -64,6 +68,7 @@ def openlog(filename, dt, frn, ton):
     f.close()
     testlog(ppp, frn, ton)
 
+#function to check list of lines catched from log file. and generate case-files.
 def testlog(logs, frn, ton):
     r = False
     s = False
@@ -89,18 +94,6 @@ def testlog(logs, frn, ton):
         fwriter = csv.writer(f)
         for item in out:
             fwriter.writerow(item)
-
-def smstest2(fromnumberlist, tonumberbase):
-    if len(fromnumberlist) > 0:
-        fromnumber = random.choice(fromnumberlist)
-    else:
-        print("list of from_number is incorrect")
-    nwidth = 10 - len(str(tonumberbase))
-    for i in range(10**nwidth):
-        gennum = str(i).zfill(nwidth)
-        bignum = str(tonumberbase)+gennum
-        print(gennum + ' - ' + bignum)
-
 
 #smstest([4422209344], [4844249683])
 #smstest2([4422209344], 48442496)
